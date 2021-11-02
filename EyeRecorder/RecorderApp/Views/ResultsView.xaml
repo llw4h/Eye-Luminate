@@ -1,0 +1,108 @@
+﻿<Window x:Class="RecorderApp.Views.ResultsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:prism="http://prismlibrary.com/"             
+             prism:ViewModelLocator.AutoWireViewModel="True"
+            Title="Results" Height="640" Width="800" WindowStartupLocation="CenterScreen">
+    <Grid>
+
+        <Rectangle Width="5" Fill="#72c480
+                   " HorizontalAlignment="Left"/>
+        <StackPanel Background="#FF222629">
+
+            <StackPanel.Resources>
+                <Style TargetType="{x:Type Button}">
+                    <Setter Property="Margin" Value="0,10,0,0"/>
+                    <Setter Property="Width" Value="250"/>
+                    <Setter Property="Height" Value="30"/>
+                    <Setter Property="Background" Value="#E0E3EB"/>
+                    <Setter Property="BorderBrush" Value="#E0E3EB"/>
+                </Style>
+                <Style TargetType="{x:Type Label}">
+                    <Setter Property="Margin" Value="0,25,0,5"/>
+                    <Setter Property="Width" Value="400"/>
+                </Style>
+                <Style TargetType="{x:Type Rectangle}">
+                    <Setter Property="Fill" Value="Gray"/>
+                    <Setter Property="Width" Value="450"/>
+                    <Setter Property="Height" Value="1"/>
+                </Style>
+            </StackPanel.Resources>
+            <Label Content="Select CSV" Foreground="White"/>
+            <Rectangle/>
+            <TextBlock x:Name="txtSelectedFile" Width="450" >
+                <Run Text="{Binding SelectedFile}" FontStyle="Italic" FontSize="9"/>
+            </TextBlock>
+            <Button x:Name="btn_Data" Command="{Binding OpenCommand}" Content="My Recordings" Foreground="White" Background="#FFB3B3B3">
+                <Button.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+
+            <Label Content="Process CSV" Foreground="White"/>
+            <Rectangle/>
+            <Button x:Name="btn_clean" Command="{Binding CleanDataCommand}" Foreground="White" Background="#FF72C480">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+                </Button.Resources>
+                Clean Data
+            </Button>
+            <Button x:Name="btn_ivt" Command="{Binding IVTCommand}" Foreground="White" Background="#FF72C480">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+                </Button.Resources>
+                Perform IVT
+            </Button>
+            <Button x:Name="btn_test" Command="{Binding GroupFixations}" Foreground="White" Background="#FF72C480">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+                </Button.Resources>
+                Group Fixations
+            </Button>
+
+            <Label Content="Scene Selection" Foreground="White"/>
+            <Rectangle/>
+            <TextBlock x:Name="txtSelectedVid" Width="450" >
+                <Run Text="{Binding SelectedVid}" FontStyle="Italic" FontSize="9"/>
+            </TextBlock>
+            <Button x:Name="btn_open" Command="{Binding OpenVidCommand}" Foreground="White" Background="#FFB3B3B3">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+                </Button.Resources>
+                Choose Video File
+            </Button>
+            <StackPanel Orientation="Horizontal" Width="250" Height="50">
+                <TextBlock Width="150" VerticalAlignment="Center" Foreground="White">Select how many scenes?</TextBlock>
+                <TextBox x:Name="txt_Num" Width="50" Height="20" VerticalAlignment="Center" Text="{Binding NumScenes}" Foreground="White" Background="#FF2E3337" BorderBrush="#FF2E3337"></TextBox>
+            </StackPanel>
+            <Button x:Name="btn_get" Command="{Binding ExtractFrames}" Foreground="White" Background="#FF72C480">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+                </Button.Resources>
+                Extract Frames
+            </Button>
+
+            <ProgressBar Width="450" Height="30" Margin="0,30,0,5" Foreground="White" Background="#FF222629" BorderBrush="#FF222629"></ProgressBar>
+            <Button x:Name="btn_back" Command="{Binding BackCommand}" 
+                    Margin="322,50,323,50" Width="150" Background="#FF72C480" Content="Back to Main Menu" Foreground="White">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>
