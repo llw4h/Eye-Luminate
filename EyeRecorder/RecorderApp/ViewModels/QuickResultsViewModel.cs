@@ -181,6 +181,71 @@ namespace RecorderApp.ViewModels
 
         #endregion
 
+        #region clips
+
+        private ObservableCollection<VideoClip> clipData = new ObservableCollection<VideoClip>();
+
+        public ObservableCollection<VideoClip> ClipData
+        {
+            get { return clipData; }
+            set
+            {
+
+                clipData = value;
+                RaisePropertyChanged("ClipData");
+            }
+        }
+
+
+        private VideoClip selectedItem;
+
+        public VideoClip SelectedItem
+        {
+            get { return selectedItem; }
+            set
+            {
+
+                selectedItem = value;
+                RaisePropertyChanged("SelectedItem");
+            }
+        }
+
+        private VideoClip _mergedClip;
+
+        public VideoClip MergedClip
+        {
+            get { return _mergedClip; }
+            set 
+            {
+                SetProperty(ref _mergedClip, value);
+            }
+        }
+
+
+        public void Load(string csvPath)
+        {
+            List<VideoClip> dataList = readFile<VideoClip>(csvPath);
+
+            foreach (VideoClip obj in dataList)
+            {
+                App.Current.Dispatcher.Invoke((Action)delegate // <--- HERE
+                {
+                    // separate merged clip and add the rest to observable collection
+                    if(obj.rank == 0)
+                    {
+                        MergedClip = obj;
+                    } 
+                    else
+                    {
+                        clipData.Add(obj);
+                    }
+                });
+            }
+        }
+
+        #endregion
+
+
         #region UI bindings
 
         public int CurrentProgress
@@ -205,18 +270,7 @@ namespace RecorderApp.ViewModels
             }
         }
 
-        private ObservableCollection<VideoClip> clipData = new ObservableCollection<VideoClip>();
         
-        public ObservableCollection<VideoClip> ClipData
-        {
-            get { return clipData; }
-            set 
-            {
-
-                clipData = value;
-                RaisePropertyChanged("ClipData");
-            }
-        }
 
         private FileInfo selectedCSV;
 
@@ -232,31 +286,6 @@ namespace RecorderApp.ViewModels
         }
 
 
-        private VideoClip selectedItem;
-
-        public VideoClip SelectedItem
-        {
-            get { return selectedItem; }
-            set 
-            {
-
-                selectedItem = value;
-                RaisePropertyChanged("SelectedItem");
-            }
-        }
-
-        public void Load(string csvPath)
-        {
-            List<VideoClip> dataList = readFile<VideoClip>(csvPath);
-
-            foreach (VideoClip obj in dataList)
-            {
-                App.Current.Dispatcher.Invoke((Action)delegate // <--- HERE
-                {
-                    clipData.Add(obj);
-                });
-            }
-        }
 
         
         #endregion

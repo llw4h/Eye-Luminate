@@ -23,12 +23,15 @@ namespace RecorderApp.Views
     public partial class QuickResultsView : Window, IView3
     {
         IEventAggregator _ea;
+
+
         public QuickResultsView(IEventAggregator ea)
         {
             InitializeComponent();
             _ea = ea;
             Loaded += QuickResultsView_Loaded;
-            lbFiles.SelectionChanged += LbFiles_SelectionChanged; ;
+            lbFiles.SelectionChanged += LbFiles_SelectionChanged;
+            MediaElement clipEl = new MediaElement();
         }
 
         private void LbFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -76,21 +79,64 @@ namespace RecorderApp.Views
         private void VidPlayer_MediaFailed(object sender, ExceptionRoutedEventArgs e)
         {
             //VidPlayer.SetCurrentValue(VidPlayer.Source, new Uri(@"D:\tobii\thess\EyeGazeTracker\EyeRecorder\RecorderApp\Assets\blank.jpg"));
-            VidPlayer.Source = new Uri(@"D:\tobii\thess\EyeGazeTracker\EyeRecorder\RecorderApp\Assets\blank.jpg");
+            //VidPlayer.Source = new Uri(@"D:\tobii\thess\EyeGazeTracker\EyeRecorder\RecorderApp\Assets\blank.jpg");
         }
 
         private void VidPlayer_MediaEnded(object sender, RoutedEventArgs e)
         {
-            VidPlayer.Source = new Uri(@"D:\tobii\thess\EyeGazeTracker\EyeRecorder\RecorderApp\Assets\blank.jpg");
+            //VidPlayer.Source = new Uri(@"D:\tobii\thess\EyeGazeTracker\EyeRecorder\RecorderApp\Assets\blank.jpg");
             
         }
 
         private void VidPlayer_MediaOpened(object sender, RoutedEventArgs e)
         {
-            VidPlayer.Visibility = Visibility.Visible;
+            //VidPlayer.Visibility = Visibility.Visible;
         }
 
+        private void clipEl_MouseEnter(object sender, MouseEventArgs e)
+        {
+            Console.WriteLine("enteresd");
+            MediaElement clip = sender as MediaElement;
+            clip.Play();
+            //clipEl.Play();
+        }
 
+        private void clipEl_MouseLeave(object sender, MouseEventArgs e)
+        {
+            MediaElement clip = sender as MediaElement;
+            clip.Pause();
+            //clipEl.Stop();
+        }
+
+        private void clipEl_Loaded(object sender, RoutedEventArgs e)
+        {
+            MediaElement clip = sender as MediaElement;
+            clip.Pause();
+            clip.Position = TimeSpan.FromMilliseconds(400);
+            //clipEl.Pause();
+        }
+
+        private void PreviewClip_Loaded(object sender, RoutedEventArgs e)
+        {
+            MediaElement clip = sender as MediaElement;
+            clip.Pause();
+            clip.Position = TimeSpan.FromSeconds(1);
+            //clipEl.Pause();
+        }
+
+        private void PreviewClip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            MediaElement clip = sender as MediaElement;
+            clip.Play();
+            //PreviewClip.Play();
+        }
+
+        private void PreviewClip_MouseEnter(object sender, MouseEventArgs e)
+        {
+            MediaElement clip = sender as MediaElement;
+            clip.Play();
+            //PreviewClip.Play();
+        }
     }
 
 
