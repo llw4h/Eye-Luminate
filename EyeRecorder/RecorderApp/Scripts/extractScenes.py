@@ -77,15 +77,16 @@ def groupFixation(data):
     dataList = []
     inGroup = False
     timeStart = 0
-    rank = 0
+
     for idx, row in enumerate(data):
         nextX = 0
         if (idx+1 < len(data)):
             nextEl = data[idx+1]
+            prevEl = data[idx-1]
             nextX = nextEl.centroid_x
             #print(row.centroidX, " ", nextEl.centroidX)
         # * check if fixation or saccade 
-        if row.classification == 'fixation':
+        if row.classification == "fixation":
             # * check if next row has the same centroid_x coordinate (whether theyre in the same fixation group)
             if row.centroid_x == nextX: #if ingroup
             
@@ -96,14 +97,15 @@ def groupFixation(data):
                 inGroup = False
                 # * checks if fixation is the only member of group. if so, duration is set according to timestamp of current row and timestamp of next row 
                 # TODO: check validity of logic lol
-                if timeStart == 0:
+                if timeStart == 0 or prevEl.classification == "saccade" and nextEl.classification == "saccade":
+                    print(row.time, nextEl.time)
                     timeStart = row.time
                     timeEnd = nextEl.time
                 else:
                     timeEnd = row.time
                 duration = int(timeEnd) - int(timeStart)
 
-                dataList.append(Fixation(row.centroid_x, row.centroid_y, timeStart, timeEnd, duration,rank))
+                dataList.append(Fixation(row.centroid_x, row.centroid_y, timeStart, timeEnd, duration))
 
     return dataList
 
@@ -319,7 +321,7 @@ if __name__ == "__main__":
 
     fixGroupData = groupFixation(newData)
     
-    #writeFile('fixations.csv', fixGroupData)
+    writeFile(newFn+'_fixations.csv', fixGroupData)
 
     sortedData = sortByDuration(fixGroupData)
     writeFile(newFn+'_sorted.csv', sortedData)

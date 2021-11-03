@@ -47,8 +47,14 @@ def cleanIVT (data):
     dataList = []
     #initialize values
     centroid_x = centroid_y = 0
+         
 
-    for row in data:
+    for idx, row in enumerate(data):
+        nextX = 0
+        if (idx+1 < len(data)):
+            nextEl = data[idx+1]
+            nextC = nextEl.classification
+
         if row.classification == "saccade":
             centroid_x = 0
             centroid_y = 0
@@ -58,7 +64,7 @@ def cleanIVT (data):
 
         dataList.append(GazeData(row.gazeX, row.gazeY, row.time, row.time_diff, row.distance, 
             row.velocity, row.classification, centroid_x, centroid_y))
-    
+
     return dataList
 
 
@@ -72,10 +78,11 @@ def groupFixation(data):
         nextX = 0
         if (idx+1 < len(data)):
             nextEl = data[idx+1]
+            prevEl = data[idx-1]
             nextX = nextEl.centroid_x
             #print(row.centroidX, " ", nextEl.centroidX)
         # * check if fixation or saccade 
-        if row.classification == 'fixation':
+        if row.classification == "fixation":
             # * check if next row has the same centroid_x coordinate (whether theyre in the same fixation group)
             if row.centroid_x == nextX: #if ingroup
             
@@ -86,7 +93,8 @@ def groupFixation(data):
                 inGroup = False
                 # * checks if fixation is the only member of group. if so, duration is set according to timestamp of current row and timestamp of next row 
                 # TODO: check validity of logic lol
-                if timeStart == 0:
+                if timeStart == 0 or prevEl.classification == "saccade" and nextEl.classification == "saccade":
+                    print(row.time, nextEl.time)
                     timeStart = row.time
                     timeEnd = nextEl.time
                 else:
