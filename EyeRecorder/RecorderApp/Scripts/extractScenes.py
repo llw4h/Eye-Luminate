@@ -241,8 +241,9 @@ def selectScenes(data, vidPath):
 
         print("Done", count, "out of", len(data))
         count += 1
-
-    selectedClips = createMergedClip(vidPath, selectedClips)
+    
+    if len(selectedClips) > 1:
+        selectedClips = createMergedClip(vidPath, selectedClips)
     return selectedClips
 
 #region sort filename with int/float properly
@@ -302,6 +303,7 @@ if __name__ == "__main__":
     n = int(sys.argv[2])
     vidPath = sys.argv[3]
     destPath = sys.argv[4]
+    print('filename: ', filename)
     #destPath = os.path.abspath("r" + "'" + destPath + "'")
     #destPath = os.path.abspath(sys.argv[4])
     destPath = destPath.replace("\\","/")
@@ -311,20 +313,23 @@ if __name__ == "__main__":
     rawData = readFile(filename)
     
     newData = cleanIVT(rawData)
+    
+    #strip filename of ext
+    newFn = filename.rstrip('_finalGazeData.csv')
 
     fixGroupData = groupFixation(newData)
     
     #writeFile('fixations.csv', fixGroupData)
 
     sortedData = sortByDuration(fixGroupData)
-    writeFile('sorted.csv', sortedData)
+    writeFile(newFn+'_sorted.csv', sortedData)
     
     highestN = getHighestN(sortedData, n)  
-    writeFile('highestN.csv', highestN)
+    writeFile(newFn+'_highestN.csv', highestN)
 
     chronData = sortByTimeStart(highestN)
 
     clipInfo = selectScenes(chronData, vidPath)
 
-    writeClipDetails('selectedClipInfo.csv', clipInfo)
+    writeClipDetails(newFn+'_selectedClipInfo.csv', clipInfo)
     #'''

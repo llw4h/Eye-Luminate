@@ -125,7 +125,7 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
  -->
-                <ListBox x:Name="lbClips" ItemsSource="{Binding ClipData}" MinHeight="50" MaxHeight="240" Width="1000" Margin="100,0,0,0" 
+                <ListBox x:Name="lbClips" ItemsSource="{Binding ClipData}" MinHeight="50" MaxHeight="440" Width="800" Margin="100,0,0,0" HorizontalContentAlignment="Stretch" 
                              SelectedItem="{Binding SelectedItem}" BorderBrush="{x:Null}" Background="#FF222629" Foreground="White">
                     <ListBox.ItemTemplate>
                         <DataTemplate>

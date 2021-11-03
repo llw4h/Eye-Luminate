@@ -447,6 +447,8 @@ namespace RecorderApp.ViewModels
                 if (SelectedCSV != null)
                 {
                     Console.WriteLine("something is selected right now");
+
+                    Console.WriteLine("selected filename: " + Path.GetFileNameWithoutExtension(selectedCSV.FullName));
                 }
                 selectedVid = value;
                 RaisePropertyChanged("SelectedVid");
@@ -545,7 +547,7 @@ namespace RecorderApp.ViewModels
             string sceneCount = numScenes;
             string vidPath = selectedVid;
 
-            string args = csvFile + " " + sceneCount + " " + vidPath;
+            string args = csvFile + " " + sceneCount + " " + '"' + vidPath + '"';
             Console.WriteLine(args);
             Console.WriteLine("chosen path: " + SelectedPath);
             runScript(scriptPath, args, selectedPath);
@@ -556,6 +558,7 @@ namespace RecorderApp.ViewModels
         #region run cmd
         void runScript(string pythonScript, string args, string destFolder)
         {
+            destFolder = '"' + destFolder + '"';
             Console.WriteLine("argument: " + @"C:\Python37\python.exe" + " " + pythonScript + " " + args + " " + destFolder);
             Process p = new Process();
             p.StartInfo = new ProcessStartInfo(@"C:\Python37\python.exe", pythonScript + " " + args + " " + destFolder)
@@ -638,8 +641,8 @@ namespace RecorderApp.ViewModels
             List<GazeData> finalGazeData = new List<GazeData>();
             Output = "Performing IVT...";
             finalGazeData = await Task.Run(() => PerformIVT());
-
-            SelectedFile = writeFile(finalGazeData, "finalGazeData");
+            string filename = Path.GetFileNameWithoutExtension(selectedCSV.FullName) + "_finalGazeData";
+            SelectedFile = writeFile(finalGazeData, filename);
         }
 
         private async Task getScenes()
@@ -659,7 +662,6 @@ namespace RecorderApp.ViewModels
             Thread.Sleep(100);
             worker.ReportProgress(_currentProgress+=5);
             SelectedFile = SelectedCSV.FullName;
-
             Thread.Sleep(100);
             worker.ReportProgress(_currentProgress += 15);
             await cleanDataAsync();
@@ -677,7 +679,8 @@ namespace RecorderApp.ViewModels
 
             Output = "Loaded Clips...";
             //TODO: modify and make not brute-force
-            string infoDir = Path.Combine(outputFileDirectory, "selectedClipInfo.csv");
+            string filename = Path.GetFileNameWithoutExtension(selectedCSV.FullName) + "_selectedClipInfo.csv";
+            string infoDir = Path.Combine(outputFileDirectory, filename);
             Console.WriteLine(infoDir);
             if (File.Exists(infoDir))
             {
