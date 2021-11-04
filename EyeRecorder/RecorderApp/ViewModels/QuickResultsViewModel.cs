@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -27,19 +28,22 @@ namespace RecorderApp.ViewModels
         DirectoryInfo dir;
         private readonly BackgroundWorker worker;
         int runCount;
-
+        IEventAggregator _ea;
         public bool getAll { get; set; }
         FileInfo[] Files;
         public QuickResultsViewModel(IEventAggregator ea)
         {
             runCount = 0;
-            ea.GetEvent<SavePathEvent>().Subscribe(GetVidPath);
+            _ea = ea;
+            _ea.GetEvent<SavePathEvent>().Subscribe(GetVidPath);
             //this.OpenCommand = new RelayCommand(this.OpenFile);
             this.OpenVidCommand = new RelayCommand(this.OpenVid);
 
             this.ChooseDestPath = new RelayCommand(this.ChooseFolder);
 
             this.SelectScenesCommand = new RelayCommand(this.SelectScenes);
+
+            this.SaveHeatmapCommand = new RelayCommand(this.SaveHeatmap);
             //this.SelectScenesCommand = new RelayCommand(this.StartProcess);
             //this.SelectScenesCommand = new RelayCommand(this.StartProcess);
             //backgroundworker
@@ -72,9 +76,57 @@ namespace RecorderApp.ViewModels
             selectedPath = Path.Combine(outputFileDirectory, "Clips");
             //InitLoad();
 
-            ea.GetEvent<RecStatusEvent>().Subscribe(GetTrackingStatus);
-            ea.GetEvent<ListboxWatchEvent>().Subscribe(ChangeVidPath);
+            _ea.GetEvent<RecStatusEvent>().Subscribe(GetTrackingStatus);
+            _ea.GetEvent<ListboxWatchEvent>().Subscribe(ChangeVidPath);
+            Console.WriteLine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
         }
+
+        #region Image collection
+
+        private ObservableCollection<ImageBtns> imageOptions = new ObservableCollection<ImageBtns>();
+
+        public ObservableCollection<ImageBtns> ImageOptions
+        {
+            get { return imageOptions; }
+            set 
+            {
+                SetProperty(ref imageOptions, value); 
+            }
+        }
+
+        private void LoadImgOptions()
+        {
+            ImageBtns img1, img2, img3;
+
+            img1 = new ImageBtns(@"D:\tobii\thess\EyeGazeTracker\EyeRecorder\RecorderApp\Assets\happy.png", "Positive");
+            ImageOptions.Add(img1);
+            img2 = new ImageBtns(@"D:\tobii\thess\EyeGazeTracker\EyeRecorder\RecorderApp\Assets\neutral.png", "Neutral");
+            ImageOptions.Add(img2);
+            img3 = new ImageBtns(@"D:\tobii\thess\EyeGazeTracker\EyeRecorder\RecorderApp\Assets\sad.png", "Negative");
+            ImageOptions.Add(img3);
+        }
+
+        #endregion
+
+        #region check if clips are loaded to set visibility
+
+        private bool _areClipsLoaded;
+
+        public bool AreClipsLoaded
+        {
+            get { return _areClipsLoaded; }
+            set 
+            {
+                SetProperty(ref _areClipsLoaded, value);
+            }
+        }
+
+        private void clipsDoneLoading(bool status)
+        {
+            AreClipsLoaded = status;
+        }
+
+        #endregion
 
         #region Event Aggregators
         /// <summary>
@@ -225,7 +277,7 @@ namespace RecorderApp.ViewModels
         public void Load(string csvPath)
         {
             List<VideoClip> dataList = readFile<VideoClip>(csvPath);
-
+            dataList = dataList.OrderBy(o => o.rank).ToList();
             foreach (VideoClip obj in dataList)
             {
                 App.Current.Dispatcher.Invoke((Action)delegate // <--- HERE
@@ -241,6 +293,10 @@ namespace RecorderApp.ViewModels
                     }
                 });
             }
+
+            //announce loading of clips successfully
+            //_ea.GetEvent<LoadedClipsEvent>().Publish(true);
+            clipsDoneLoading(true);
         }
 
         #endregion
@@ -392,7 +448,6 @@ namespace RecorderApp.ViewModels
 
 
         #endregion
-
 
         #region Choose Destination Folder for output
 
@@ -580,6 +635,51 @@ namespace RecorderApp.ViewModels
             Console.WriteLine(args);
             Console.WriteLine("chosen path: " + SelectedPath);
             runScript(scriptPath, args, selectedPath);
+        }
+
+        #endregion
+
+        #region Save Heatmaps
+
+        public ICommand SaveHeatmapCommand { get; set; }
+
+        private async void SaveHeatmap()
+        {
+            Console.WriteLine("saveheatmap");
+            await saveHeatmap();
+        }
+
+        private async Task saveHeatmap()
+        {
+            string scriptPath = "../../../../Scripts/getHeatmap.py";
+
+            string selectedFn = selectedCSV.FullName.Replace("_selectedInfo.csv", "");
+            string fn = Path.GetFileNameWithoutExtension(selectedFn) + "_fixations.csv";
+            Console.WriteLine("csv fn: " + fn);
+
+
+            outputFileDirectory = Path.Combine(exeRuntimeDirectory, "Output");
+            string hmOutputPath = Path.Combine(exeRuntimeDirectory, "Output", "Heatmaps");
+            if (!System.IO.Directory.Exists(hmOutputPath))
+            {
+                System.IO.Directory.CreateDirectory(hmOutputPath);
+            }
+            //string destPath = Path.Combine(outputFileDirectory, "Heatmaps");
+            Console.WriteLine("output file directory: " + hmOutputPath);
+            string infDir = Path.Combine(outputFileDirectory, fn);
+            Console.WriteLine("info directory: " + infDir);
+            if (File.Exists(infDir))
+            {
+                Console.WriteLine(fn + " exists");
+
+                string csvFile = Path.GetFileName(fn);
+                string vidPath = selectedVid; 
+                string args = csvFile + " " + '"' + vidPath + '"';
+                //runScript(scriptPath, args, destPath);
+                Console.WriteLine("chosen args: " + args);
+                await Task.Run(() => runScript(scriptPath, args, hmOutputPath));
+            }
+
         }
 
         #endregion

@@ -95,7 +95,7 @@ namespace RecorderApp.Views
 
         private void clipEl_MouseEnter(object sender, MouseEventArgs e)
         {
-            Console.WriteLine("enteresd");
+            //Console.WriteLine("enteresd");
             MediaElement clip = sender as MediaElement;
             clip.Play();
             //clipEl.Play();
@@ -112,7 +112,7 @@ namespace RecorderApp.Views
         {
             MediaElement clip = sender as MediaElement;
             clip.Pause();
-            clip.Position = TimeSpan.FromMilliseconds(400);
+            clip.Position = TimeSpan.FromMilliseconds(10);
             //clipEl.Pause();
         }
 
@@ -120,7 +120,7 @@ namespace RecorderApp.Views
         {
             MediaElement clip = sender as MediaElement;
             clip.Pause();
-            clip.Position = TimeSpan.FromSeconds(1);
+            clip.Position = TimeSpan.FromMilliseconds(10);
             //clipEl.Pause();
         }
 
@@ -136,6 +136,26 @@ namespace RecorderApp.Views
             MediaElement clip = sender as MediaElement;
             clip.Play();
             //PreviewClip.Play();
+        }
+
+        private void clipEl_MediaEnded(object sender, RoutedEventArgs e)
+        {
+            MediaElement clip = sender as MediaElement;
+            clip.Pause();
+            clip.Position = TimeSpan.FromMilliseconds(1);
+        }
+
+        private void PreviewClip_MediaEnded(object sender, RoutedEventArgs e)
+        {
+            MediaElement clip = sender as MediaElement;
+            clip.Pause();
+            clip.Position = TimeSpan.FromMilliseconds(1);
+        }
+
+        private void PreviewClip_MouseLeave(object sender, MouseEventArgs e)
+        {
+            MediaElement clip = sender as MediaElement;
+            clip.Pause();
         }
     }
 

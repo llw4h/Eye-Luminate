@@ -18,7 +18,7 @@ namespace RecorderApp
         private const int SPLASH_FADE_TIME = 500;     // Miliseconds 
         protected override Window CreateShell()
         {
-            SplashScreen splash = new SplashScreen("logo3.png");
+            SplashScreen splash = new SplashScreen("/Assets/logo3.png");
             splash.Show(false, true);
 
             // Step 2 - Start a stop watch 

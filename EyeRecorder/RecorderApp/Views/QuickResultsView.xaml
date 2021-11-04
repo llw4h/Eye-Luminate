@@ -9,8 +9,11 @@
 
     <Window.Resources>
         <utilities:FilenameConverter x:Key="FilenameConverter" />
+        <utilities:VisibilityConverter x:Key="VisibilityConverter"/>
         <utilities:StringToURI x:Key="StringToURI"/>
+        <Style x:Key="radioStyle" TargetType="{x:Type RadioButton}" BasedOn="{StaticResource {x:Type ToggleButton}}" />
     </Window.Resources>
+    <ScrollViewer>
     <Grid>
         <!--<Rectangle Width="5" Fill="#72c480
                        " HorizontalAlignment="Left"/>-->
@@ -42,6 +45,7 @@
                 </TextBlock>
                 <Button x:Name="btn_Data" Command="{Binding OpenCommand}">Choose CSV File</Button>
                 -->
+            
             <TextBlock x:Name="txtSelectedFile" Width="450" Foreground="White" >
                     <Run Text="{Binding ElementName=lbFiles, Path=SelectedItem.FullName, Mode=OneWay}" FontStyle="Italic" FontSize="9"/>
             </TextBlock>
@@ -105,33 +109,58 @@
                 </Button.Resources>
                 Back to Main Menu
             </Button>
-            <StackPanel>
-                
-                <ItemsControl x:Name="lbClips" ItemsSource="{Binding ClipData}" Grid.IsSharedSizeScope="True" Margin="30,10,30,0">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="5">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" SharedSizeGroup="one" />
-                                    <RowDefinition Height="Auto" SharedSizeGroup="two" />
-                                </Grid.RowDefinitions>
-                                <MediaElement x:Name="clipEl" Width="200" Height="200" Source="{Binding filePath, Converter={StaticResource StringToURI}}" LoadedBehavior="Manual" 
-                                              MouseEnter="clipEl_MouseEnter" Loaded="clipEl_Loaded" ScrubbingEnabled="True" />
-                                <TextBlock Grid.Row="1" Text="{Binding Path=fileName}"/>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Label Visibility="{Binding AreClipsLoaded, Converter={StaticResource VisibilityConverter}}"
+                           FontFamily="Segoe UI Semibold" Foreground="White">
+                        Rate each scene
+                    </Label>
+                    <ItemsControl x:Name="lbClips" ItemsSource="{Binding ClipData}" Grid.IsSharedSizeScope="True">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="5">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" SharedSizeGroup="one" />
+                                        <RowDefinition Height="Auto" SharedSizeGroup="two" />
+                                    </Grid.RowDefinitions>
+                                    <MediaElement x:Name="clipEl" Width="200" Height="200" Source="{Binding filePath, Converter={StaticResource StringToURI}}" 
+                                              MouseEnter="clipEl_MouseEnter" MouseLeave="clipEl_MouseLeave" 
+                                              LoadedBehavior="Manual" Loaded="clipEl_Loaded" ScrubbingEnabled="True" 
+                                              MediaEnded="clipEl_MediaEnded" />
+                                    <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
 
+                                        <RadioButton GroupName="{Binding ElementName=clipEl, Path=Source}" Style="{StaticResource radioStyle}" Height="50" Width="50" >
+                                            <Image Source="/RecorderApp;component/Assets/happy.png"/>
+                                        </RadioButton>
+                                        <RadioButton GroupName="{Binding ElementName=clipEl, Path=Source}" Style="{StaticResource radioStyle}" Height="50" Width="50">
+                                            <Image Source="/RecorderApp;component/Assets/neutral.png"/>
+                                        </RadioButton>
+                                        <RadioButton GroupName="{Binding ElementName=clipEl, Path=Source}" Style="{StaticResource radioStyle}" Height="50" Width="50">
+                                            <Image Source="/RecorderApp;component/Assets/sad.png"/>
+                                        </RadioButton>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
-                <MediaElement x:Name="PreviewClip" Width="200" Height="200" Source="{Binding MergedClip.filePath, Converter={StaticResource StringToURI}}" 
-                              Loaded="PreviewClip_Loaded" LoadedBehavior="Manual" MouseLeftButtonDown="PreviewClip_MouseLeftButtonDown" MouseEnter="PreviewClip_MouseEnter"
-                              ScrubbingEnabled="True"/>
+                    <Button Visibility="{Binding AreClipsLoaded, Converter={StaticResource VisibilityConverter}}">Submit Ratings</Button>
+
+                    <Label Visibility="{Binding AreClipsLoaded, Converter={StaticResource VisibilityConverter}}"
+                           FontFamily="Segoe UI Semibold" Foreground="White">
+                        Preview All Scenes
+                    </Label>
+                    <MediaElement x:Name="PreviewClip" Width="200" Height="200" Source="{Binding MergedClip.filePath, Converter={StaticResource StringToURI}}" 
+                              Loaded="PreviewClip_Loaded" LoadedBehavior="Manual" ScrubbingEnabled="True" MediaEnded="PreviewClip_MediaEnded"
+                              MouseLeftButtonDown="PreviewClip_MouseLeftButtonDown" MouseEnter="PreviewClip_MouseEnter" MouseLeave="PreviewClip_MouseLeave" />
+
+                <Button x:Name="btn_hm" Command="{Binding SaveHeatmapCommand}" 
+                        Margin="0,50" Width="150" Background="#FF72C480" FontFamily="Segoe UI Semibold" Foreground="White"
+                        Visibility="{Binding AreClipsLoaded, Converter={StaticResource VisibilityConverter}}">Generate Heatmap</Button>
 
 
             </StackPanel>
@@ -139,4 +168,5 @@
         </StackPanel>
         
     </Grid>
+    </ScrollViewer>
 </Window>
