@@ -49,7 +49,7 @@ namespace RecorderApp.ViewModels
             _eyeXHost.GazeTrackingChanged += EyeXHost_GazeTrackingChanged;
 
             // start eyeX host
-            _eyeXHost.Start();
+            //_eyeXHost.Start();
 
             if (_eyeXHost.WaitUntilConnected(TimeSpan.FromSeconds(5)))
             {
