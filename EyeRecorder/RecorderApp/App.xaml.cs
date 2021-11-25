@@ -36,9 +36,10 @@ namespace RecorderApp
 
             // Step 5 - show the page 
             splash.Close(TimeSpan.FromMilliseconds(SPLASH_FADE_TIME));
-            return Container.Resolve<MainWindow>();
-        }
 
+            return Container.Resolve<MainWindow>();
+
+        }
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
             // goes to GazeTrackerView for next command
