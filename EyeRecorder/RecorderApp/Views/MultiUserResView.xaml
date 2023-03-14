@@ -1,0 +1,157 @@
+﻿<Window x:Class="RecorderApp.Views.MultiUserResView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:prism="http://prismlibrary.com/"             
+             prism:ViewModelLocator.AutoWireViewModel="True"
+             xmlns:fa="http://schemas.fontawesome.io/icons/" xmlns:utilities="clr-namespace:RecorderApp.Utility"
+        Height="590" Width="705" WindowStartupLocation="CenterScreen" ResizeMode="CanMinimize" Title="Multi-User Data">
+
+    <Window.Resources>
+        <utilities:VisibilityConverter x:Key="VisibilityConverter"/>
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="37*"/>
+                <ColumnDefinition Width="483*"/>
+            </Grid.ColumnDefinitions>
+            <ContentControl prism:RegionManager.RegionName="ContentRegion" Grid.ColumnSpan="3" Margin="0,0,0,0.5" />
+            <Rectangle Width="15" Fill="#FFCEE3D7" HorizontalAlignment="Left" Margin="0,0,0,0.5"/>
+        <StackPanel Grid.ColumnSpan="2" Margin="0,0,0,0.5">
+            <StackPanel.Resources>
+                <Style TargetType="{x:Type Button}">
+                    <Setter Property="Margin" Value="0,10,0,0"/>
+                    <Setter Property="Width" Value="150"/>
+                    <Setter Property="Height" Value="30"/>
+                    <Setter Property="Background" Value="#E0E3EB"/>
+                    <Setter Property="BorderBrush" Value="#E0E3EB"/>
+                </Style>
+                <Style TargetType="{x:Type Label}">
+                    <Setter Property="Margin" Value="0,25,0,5"/>
+                </Style>
+            </StackPanel.Resources>
+            <StackPanel.Background>
+                <ImageBrush ImageSource="/Assets/mainBG.png"/>
+            </StackPanel.Background>
+
+            <Button Command="{Binding BackCommand}" Width="30" Height="30" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="30,30,0,0" Foreground="White" Background="#FF72C480">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="50"/>
+                    </Style>
+                </Button.Resources>
+
+                <fa:ImageAwesome Icon="ArrowLeft" Height="22" Width="12" Foreground="AliceBlue" VerticalAlignment="Center"/>
+            </Button>
+
+            <ListBox x:Name="lbFileList" ItemsSource="{Binding UserFileList}" MinHeight="45" Width="300" Margin="0,10,0,0" Height="60"
+                            SelectedItem="{Binding SelectedCSVFile}" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#FF222629" BorderBrush="#FF222629" Foreground="White">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Name}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+
+                <Button Margin="10,20,5,10" FontFamily="Segoe UI Semibold" FontWeight="Bold" Foreground="White" Background="#FF72C480" BorderBrush="#FFE0E3EB" Width="80"
+                    Content="Clear List" Command="{Binding ClearListCommand}">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="5"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
+
+                <Button Margin="5,20,10,10" FontFamily="Segoe UI Semibold" FontWeight="Bold" Foreground="White" 
+                        Background="#FF72C480" BorderBrush="#FFE0E3EB" Width="40" Command="{Binding RemoveFileCommand}" >
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="5"/>
+                        </Style>
+                    </Button.Resources>
+                    <StackPanel Orientation="Horizontal" >
+                        <fa:ImageAwesome Icon="Trash" Height="16" Width="16" Foreground="AliceBlue" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+
+                <Button Margin="30,20,5,10" FontFamily="Segoe UI Semibold" FontWeight="Bold" Foreground="White" Background="#FF72C480" BorderBrush="#FFE0E3EB" Width="80"
+                        Command="{Binding AddFileCommand}">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="5"/>
+                        </Style>
+                    </Button.Resources>
+                    <StackPanel Orientation="Horizontal" >
+                        <fa:ImageAwesome Icon="Plus" Height="16" Width="16" Foreground="AliceBlue" VerticalAlignment="Center"/>
+                        <TextBlock Text="Add" FontFamily="Segoe UI Semibold" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" Margin="8"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Command="{Binding HelpCommand}" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5,15,0,0" Foreground="White" Background="#FFB3B3B3">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="50"/>
+                        </Style>
+                    </Button.Resources>
+
+                    <fa:ImageAwesome Icon="Question" Height="16" Width="8" Foreground="AliceBlue" VerticalAlignment="Center"/>
+                </Button>
+
+            </StackPanel>
+
+            
+
+            <TextBlock x:Name="txtSelectedVid" Width="350" Foreground="White" FontFamily="Segoe UI Semilight" TextAlignment="Center" >
+                    <Run Text="{Binding SelectedVid}" FontStyle="Italic" FontSize="9" />
+            </TextBlock>
+            <Button x:Name="btn_open" Command="{Binding OpenVidCommand}" Foreground="White" Background="#FFB3B3B3">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+                </Button.Resources> Choose Video File
+            </Button>
+
+            <fa:ImageAwesome Margin="0,20,10,0" Icon="CircleOutlineNotch" Spin="True" Height="24" Width="24" Foreground="AliceBlue" HorizontalAlignment="Center"
+                                 Visibility="{Binding IsProcessing, Converter={StaticResource VisibilityConverter}}"/>
+            <TextBlock x:Name="txtProgressOutput" Width="250" Foreground="White" FontFamily="Segoe UI Semibold" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                           TextAlignment="Center" Margin="10,5,5,0">
+                    <Run Text="{Binding Output}" FontSize="10"/>
+            </TextBlock>
+
+            <Button Margin="10,20,10,10" FontFamily="Segoe UI Semibold" FontWeight="Bold" Foreground="White" Background="#FF72C480" BorderBrush="#FFE0E3EB" Width="200"
+                    Content="Generate Ratings Summary" Command="{Binding GetResultsCommand}">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+
+            <Button Margin="10,20,10,10" FontFamily="Segoe UI Semibold" FontWeight="Bold" Foreground="White" Background="#FF72C480" BorderBrush="#FFE0E3EB" Width="200"
+                    Content="Generate Fixations Summary" Command="{Binding GetFixationsResults}">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+
+            <Button Margin="10,20,10,10" FontFamily="Segoe UI Semibold" FontWeight="Bold" Foreground="White" Background="#FF72C480" BorderBrush="#FFE0E3EB" Width="200"
+                    Content="Generate Heatmap" Command="{Binding GetGrpHeatmap}">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+
+
+
+        </StackPanel>
+    </Grid>
+</Window>

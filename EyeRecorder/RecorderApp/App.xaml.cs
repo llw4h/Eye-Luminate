@@ -5,6 +5,8 @@ using System.Windows;
 using System.Diagnostics;
 using System.Threading;
 using System;
+using RecorderApp.Dialogs;
+using DryIoc;
 
 namespace RecorderApp
 {
@@ -36,22 +38,52 @@ namespace RecorderApp
 
             // Step 5 - show the page 
             splash.Close(TimeSpan.FromMilliseconds(SPLASH_FADE_TIME));
-
             return Container.Resolve<MainWindow>();
-
         }
+
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
             // goes to GazeTrackerView for next command
             containerRegistry.Register<IView,GazeTrackerView>();
+            // goes to PointerTrackerView for next command
+            containerRegistry.Register<IView1, PointerTrackerView>();
             // goes to ResultsView for next command
             containerRegistry.Register<IView2, ResultsView>();            
             // goes to QuickResultsView for next command
             containerRegistry.Register<IView3, QuickResultsView>();
+            // goes to MultiUserResView for next command
+            containerRegistry.Register<IView4, MultiUserResView>();
+            // goes to LoadClipsView for next command
+            containerRegistry.Register<IView5, LoadClipsView>();
 
             containerRegistry.Register<MainView, MainWindow>();
 
+            // message dialog
+            containerRegistry.RegisterDialog<MessageDialog, MessageDialogViewModel>();
+
+            //notif dialog
+            containerRegistry.RegisterDialog<NotifDialog, NotifDialogViewModel>();
+            containerRegistry.RegisterDialog<HelpDialog, HelpDialogViewModel>();
+
+
+            containerRegistry.RegisterDialog<RateChartView, RateChartViewModel>();
+            containerRegistry.RegisterDialog<ChartView, ChartViewModel>();
+            containerRegistry.RegisterDialog<ConfigureDialog, ConfigureDialogViewModel>();
+
         }
-        
+
+        private void Application_Exit(object sender, ExitEventArgs e)
+        {
+            Application.Current.Shutdown();
+            Console.WriteLine("Application_Exit");
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            base.OnExit(e);
+            Console.WriteLine("OnExit");
+        }
+
+
     }
 }

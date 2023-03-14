@@ -1,6 +1,5 @@
 from collections import defaultdict
 import os
-import random
 
 from moviepy.editor import *
 import numpy as np
@@ -31,9 +30,9 @@ class VideoHeatmapper:
 
         return CompositeVideoClip([base_video] + list(heatmap_clips))
 
-    def heatmap_on_video_path(self, video_path, points, heat_fps=20):
+    def heatmap_on_video_path(self, video_path, points, heat_fps=20, keep_heat=False, heat_decay_s=None):
         base = VideoFileClip(video_path)
-        return self.heatmap_on_video(base, points, heat_fps)
+        return self.heatmap_on_video(base, points, heat_fps, keep_heat, heat_decay_s)
 
     def heatmap_on_image(self, base_img, points,
                          heat_fps=20,
@@ -104,24 +103,17 @@ class VideoHeatmapper:
                    .set_duration(interval/1000))
 
 
-def _example_random_points():
-    def rand_point(max_x, max_y, max_t):
-        return random.randint(0, max_x), random.randint(0, max_y), random.randint(0, max_t)
-
-    return (rand_point(720, 480, 40000) for _ in range(500))
-
-
 class GazeData:
     def __init__(self, gazeX, gazeY, time, time_diff=0, distance=0, velocity=0, classification='', centroid_x=0, centroid_y=0):
-        self.gazeX = gazeX
-        self.gazeY = gazeY
-        self.time = time
-        self.time_diff = time_diff
+        self.gazeX = float(gazeX)  
+        self.gazeY = float(gazeY)
+        self.time = int(time)
+        self.time_diff = int(time_diff)
         self.distance = distance
         self.velocity = velocity
         self.classification = classification
-        self.centroid_x = centroid_x
-        self.centroid_y = centroid_y 
+        self.centroid_x = float(centroid_x)
+        self.centroid_y = float(centroid_y)
 
 
 def readFile(filename):
@@ -132,9 +124,9 @@ def readFile(filename):
         next(reader, None) #skip header lines
 
         for gazeX, gazeY, time, time_diff, distance, velocity, classification, centroid_x, centroid_y in reader:
-            gazeData.append(GazeData(int(gazeX), int(gazeY), int(time), int(time_diff), distance, velocity, classification, float(centroid_x), float(centroid_y))) 
+            gazeData.append(GazeData(gazeX, gazeY, time, time_diff, distance, velocity, classification, centroid_x, centroid_y)) 
 
-        return gazeData
+    return gazeData
 
 
 
@@ -142,39 +134,104 @@ def subList(data):
     lst = []
     for x in data:
         #lst.append([x.centroid_x, x.centroid_y, x.time])
-        lst.append([x.gazeX, x.gazeY, x.time])
+        if (x.classification == 'fixation'):
+            lst.append([x.gazeX, x.gazeY, x.time])
 
 
     tuples = [tuple(x) for x in lst]
     return tuples
 
 
-def drawHeatmap(data, vidPath, filename):
-    filename = filename + ".mp4"
+def drawHeatmap(data, vidPath, destPath, vidFileName, decay):
+    filename = vidFileName
     vid=vidPath
 
     clip = VideoFileClip(vidPath)
+    clip = clip.resize(newsize=(resWidth,resHeight))
+    tempFile = "temp.mp4"
+    tempDir = os.path.join(destPath, tempFile)
+    clip.write_videofile(tempDir)
+    clip_fps = int(clip.fps)
     img_heatmapper = Heatmapper()
     video_heatmapper = VideoHeatmapper(img_heatmapper)
 
     heatmap_video = video_heatmapper.heatmap_on_video_path(
-        video_path=vid,
-        points=gPoints
+        video_path=tempDir,
+        points=data,
+        heat_fps=clip_fps,
+        keep_heat=True,
+        heat_decay_s=decay
      )
 
-    heatmap_video.write_videofile(filename, bitrate="5000k", fps=24)
+    fp = os.path.join(destPath,filename)
+    duration = clip.duration
+    heatmap_video = heatmap_video.subclip(0, duration)
+    heatmap_video.write_videofile(fp, bitrate="5000k", fps=24)
+    heatmap_video.close()
+    clip.close()
 
+    deleteFile(tempDir)
+    
+
+def deleteFile(filename):
+
+    for p in psutil.process_iter():
+        try:
+            if filename in str(p.open_files()):
+                print(p.name())
+                print("^^^^^^^^^^^^^^^^^")
+                p.kill()
+        except:
+            continue
+
+    try:
+        os.remove(filename)
+    except OSError as e:  # name the Exception `e`
+        print("Failed with:", e.strerror) # look what it says
+        print("Error code:", e.code) 
+
+def convert(data):
+
+    convData = []
+    for x in data:
+        gx = round((x.gazeX * resWidth),4)
+        gy = round((x.gazeY * resHeight),4)
+
+        cx = round((x.centroid_x * resWidth),4)
+        cy = round((x.centroid_y * resHeight),4)
+        #print('new gx: ', gx, 'new gy: ', gy, 'new cx: ', cx, 'new cy: ', cy)
+
+        convData.append(GazeData(gx,gy,x.time,x.time_diff,x.distance,x.velocity,x.classification,cx, cy))
+
+    return convData
+#480×360
+resWidth = 640
+resHeight = 360
+
+newFn = ""
+
+def avg(data):
+    sum = 0
+    for x in data:
+        sum += x.time_diff
+
+    return (sum/len(data))*0.001
 
 if __name__ == "__main__":
     
     filename = sys.argv[1]
     vidPath = sys.argv[2]
-    destPath = sys.argv[3]
-    
+    vidFileName = sys.argv[3]
+    destPath = sys.argv[4]
+
     fixData = readFile(filename)
+    convData = convert(fixData)
     newFn = filename.rstrip('.csv')
 
-    gPoints = subList(fixData)
+    avgDiff = avg(convData)
+    #print(avgDiff)
+
+    gPoints = subList(convData)
     
-    drawHeatmap(gPoints, vidPath, newFn+"_hm")
+    drawHeatmap(gPoints, vidPath, destPath, vidFileName, 1)
 

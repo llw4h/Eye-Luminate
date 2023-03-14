@@ -19,24 +19,34 @@ class Fixation:
 
 class GazeData:
     def __init__(self, gazeX, gazeY, time, time_diff=0, distance=0, velocity=0, classification='', centroid_x=0, centroid_y=0):
-        self.gazeX = gazeX
-        self.gazeY = gazeY
-        self.time = time
-        self.time_diff = time_diff
+        self.gazeX = float(gazeX)  
+        self.gazeY = float(gazeY)
+        self.time = int(time)
+        self.time_diff = int(time_diff)
         self.distance = distance
         self.velocity = velocity
         self.classification = classification
-        self.centroid_x = centroid_x
-        self.centroid_y = centroid_y 
+        self.centroid_x = float(centroid_x)
+        self.centroid_y = float(centroid_y)
+        #self.width = 480
+        #self.height = 852
 
 class VideoClip:
         
-    def __init__(self, name, fullpath, duration, rank, imgpath):
+    def __init__(self, name, fullpath, time_start, time_end, duration, rank, rating=0, rateValue=""):
         self.name = name
         self.fullpath = fullpath
+        self.time_start = time_start
+        self.time_end = time_end
         self.duration = duration
         self.rank = rank
-        self.imgpath = imgpath
+        self.rating = rating
+        self.rateValue = rateValue
+
+
+def setResolution(width, height):
+    ClipHeight = height
+    ClipWidth = width
 
 
 # * read data from finalGazeData
@@ -47,7 +57,7 @@ def readFile(filename):
         next(reader, None) #skip header
 
         for gazeX, gazeY, time, time_diff, distance, velocity, classification, centroid_x, centroid_y in reader:
-            readList.append(GazeData(int(gazeX), int(gazeY), int(time), int(time_diff), distance, velocity, classification, centroid_x, centroid_y)) 
+            readList.append(GazeData(gazeX, gazeY, time, time_diff, distance, velocity, classification, centroid_x, centroid_y)) 
     
     return readList
 
@@ -60,8 +70,8 @@ def cleanIVT (data):
 
     for row in data:
         if row.classification == "saccade":
-            centroid_x = 0
-            centroid_y = 0
+            centroid_x = -1
+            centroid_y = -1
         else: 
             centroid_x = row.centroid_x
             centroid_y = row.centroid_y
@@ -160,13 +170,13 @@ def writeClipDetails(filename, data):
     print("Making file '", filename, "'...")
 
     with open(filename, mode='w', newline='') as clipDetails:
-        header = ['File Name', 'File Path', 'Duration', 'Rank', 'Image Path']
+        header = ['File Name', 'File Path', 'Time Start', 'Time End' , 'Duration', 'Rank', 'Rating', 'Rating Value']
         writer = csv.DictWriter(clipDetails, fieldnames=header)
 
         writer.writeheader()
         for x in data: 
-            writer.writerow({'File Name': x.name, 'File Path': str(x.fullpath), 'Duration': str(x.duration), 
-            'Rank': str(x.rank), 'Image Path': str(x.imgpath)})   
+            writer.writerow({'File Name': x.name, 'File Path': str(x.fullpath), 'Time Start': str(x.time_start), 'Time End': str(x.time_end) ,'Duration': str(x.duration), 
+            'Rank': str(x.rank), 'Rating': str(x.rating), 'Rating Value': str(x.rateValue)})   
             
     print("Created file '", filename, "'...")
 
@@ -239,13 +249,15 @@ def selectScenes(data, vidPath):
         #path = destPath + "/" + clipName
         print("path: " + path)
         #imgPath =generateThumbnail(vidPath, )
-        selectedClips.append(VideoClip(clipName,path,x.duration,x.rank,imgPath))
+        selectedClips.append(VideoClip(clipName,path,x.time_start,x.time_end,x.duration,x.rank))
 
         print("Done", count, "out of", len(data))
         count += 1
     
-    if len(selectedClips) > 1:
-        selectedClips = createMergedClip(vidPath, selectedClips)
+    #if len(selectedClips) > 1:
+        #selectedClips = createMergedClip(vidPath, selectedClips)
+
+    selectedClips = createMergedClip(vidPath, selectedClips)
     return selectedClips
 
 #region sort filename with int/float properly
@@ -269,6 +281,7 @@ def createClip(vidPath, time_start, time_end, folderpath):
     #print(time_start/1000, " ", time_end/1000)
     #ffmpeg_extract_subclip(vidPath, time_start/1000, time_end/1000, targetname=video_name)
     clip = VideoFileClip(vidPath).subclip(time_start/1000, time_end/1000)
+    clip = clip.resize(newsize=(resWidth,resHeight))
     clip.write_videofile(os.path.join(destPath,video_name))
     clip.close()
 
@@ -295,8 +308,12 @@ def createMergedClip(vidPath, clipsList):
     
     #path = destPath + "/" + video_name
     #merged_clip = merged_clip.fx( vfx.speedx, 1.25)
+    #resize clip
+    merged_clip = merged_clip.resize(newsize=(resWidth,resHeight))
     merged_clip.write_videofile(os.path.join(destPath,video_name))
-    clipsList.append(VideoClip(video_name,path,t_duration,0,imgPath))
+
+    merged_clip.close()
+    clipsList.append(VideoClip(video_name,path,0,0,t_duration,0))
 
     return clipsList
 
@@ -311,6 +328,38 @@ def write2File(filename, data):
             writer.writerow({'Gaze X': str(x.gazeX), 'Gaze Y': str(x.gazeY), 'Time': str(x.time), 
             'Time Difference': str(x.time_diff), 'Distance': str(x.distance), 'Velocity': str(x.velocity),
             'Classification': str(x.classification), 'Centroid X': str(x.centroid_x), 'Centroid Y': str(x.centroid_y)})
+
+def convert(data):
+
+    convData = []
+    for x in data:
+        gx = round((x.gazeX * resWidth),4)
+        gy = round((x.gazeY * resHeight),4)
+
+        cx = round((x.centroid_x * resWidth),4)
+        cy = round((x.centroid_y * resHeight),4)
+        #print('new gx: ', gx, 'new gy: ', gy, 'new cx: ', cx, 'new cy: ', cy)
+
+        convData.append(GazeData(gx,gy,x.time,x.time_diff,x.distance,x.velocity,x.classification,cx, cy))
+
+    return convData
+
+def normalize(data):
+    convData = []
+    for x in data:
+        gx = x.gazeX/resWidth
+        gy = x.gazeY/resHeight
+
+        cx = x.centroid_x/resWidth
+        cy = x.centroid_y/resHeight
+        #print('new gx: ', gx, 'new gy: ', gy, 'new cx: ', cx, 'new cy: ', cy)
+
+        convData.append(GazeData(gx,gy,x.time,x.time_diff,x.distance,x.velocity,x.classification,cx, cy))
+
+    return convData
+#480×360
+resWidth = 640
+resHeight = 360
 
 if __name__ == "__main__":
     filename = sys.argv[1]
@@ -327,15 +376,23 @@ if __name__ == "__main__":
 
 
     #strip filename of ext
-    newFn = filename.rstrip('_finalGazeData.csv')
+    if filename.find('_finalGazeData.csv') != -1:
+        newFn = filename.rstrip('_finalGazeData.csv')
+    else:
+        newFn = filename.rstrip('.csv')
 
     rawData = readFile(filename)
     
-    newData = cleanIVT(rawData)
-    write2File(newFn+'_fixations.csv', newData)
+    convData = convert(rawData)
+
+    newData = cleanIVT(convData)
+
+    normData = normalize(newData)
+    write2File(newFn+'_fixations.csv', normData)
         
-    fixGroupData = groupFixation(newData)
-    
+    fixGroupData = groupFixation(normData)
+    writeFile(newFn+'_fixGrouped.csv', fixGroupData)
+
     sortedData = sortByDuration(fixGroupData)
     writeFile(newFn+'_sorted.csv', sortedData)
     

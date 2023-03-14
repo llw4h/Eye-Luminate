@@ -1,10 +1,12 @@
 ﻿using Prism.Commands;
 using Prism.Events;
 using Prism.Mvvm;
+using Prism.Services.Dialogs;
 using RecorderApp.Models;
 using RecorderApp.Utility;
 using RecorderApp.Views;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Input;
 
@@ -22,22 +24,91 @@ namespace RecorderApp.ViewModels
             }
         }
 
+        string exeRuntimeDirectory;
+        string _appPath;
+
+        IDialogService _dialogService;
         IEventAggregator _ea;
-        public IView _view;
+        public IView1 _view;
         public IView2 _view2;
         public IView3 _view3;
-        public MainWindowViewModel(IView view, IView2 view2, IView3 view3, IEventAggregator ea)
+        public IView4 _view4;
+        public IView5 _view5;
+
+        public MainWindowViewModel(IView1 view, IView2 view2, IView3 view3, IView4 view4, IView5 view5, IEventAggregator ea, IDialogService dialogService)
         {
             _view = view;
             _view2 = view2;
             _view3 = view3;
+            _view4 = view4;
+            _view5 = view5;
             _ea = ea;
+            _dialogService = dialogService;
             this.OpenCommand = new RelayCommand(this.OpenFile);
+            this.ConfigureCommand = new RelayCommand(this.ShowConfigure);
 
+            exeRuntimeDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            Console.WriteLine(exeRuntimeDirectory);
+
+            _ea.GetEvent<SaveAppPathEvent>().Subscribe(GetAppPath);
 
         }
 
+        #region Error Dialog
+
+        private void ShowDialog(string dialogMessage, bool error)
+        {
+            var p = new DialogParameters();
+            p.Add("message", dialogMessage);
+            p.Add("error", error);
+
+            _dialogService.ShowDialog("MessageDialog", p, result =>
+            {
+                if (result.Result == ButtonResult.OK)
+                {
+                    Console.WriteLine("Naclose mo ata");
+
+                }
+            });
+        }
+
+        private void ShowNDialog(string dialogMessage, string path)
+        {
+            var p = new DialogParameters();
+            p.Add("message", dialogMessage);
+            p.Add("path", path);
+
+            _dialogService.ShowDialog("NotifDialog", p, result =>
+            {
+                if (result.Result == ButtonResult.OK)
+                {
+
+                }
+            });
+        }
+
+        public ICommand ConfigureCommand { get; set; }
+        private void ShowConfigure()
+        {
+            var p = new DialogParameters();
+            //p.Add("message", dialogMessage);
+            //p.Add("path", path);
+
+            _dialogService.ShowDialog("ConfigureDialog", p, result =>
+            {
+                if (result.Result == ButtonResult.OK)
+                {
+
+                }
+            });
+        }
+
+        #endregion
+
         #region Open New Window Methods
+        /// <summary>
+        /// open gazepointer and then recording window
+        /// </summary>
         private DelegateCommand _nextWindow;
 
         public DelegateCommand NextWindow =>
@@ -45,9 +116,83 @@ namespace RecorderApp.ViewModels
 
         void ExecuteNextWindow()
         {
-            Next?.Invoke();
-            SendTrackingStatus(true);
-            _view.Open(this.SelectedPath);
+            if (_appPath == null)
+            {
+                Console.WriteLine("appPath: " + Properties.Settings.Default.GazeApp_default);
+                _appPath = Properties.Settings.Default.GazeApp_default;
+            }
+            if (selectedPath != null && _appPath != null)
+            {
+
+                //Process.Start(@"C:\Program Files (x86)\GazePointer\GazePointer\GazePointer.exe");
+                //startProcess(@"C:\Program Files (x86)\GazePointer\GazePointer\GazePointer.exe");
+                
+                if (startProcess(_appPath))
+                {
+                    var msg = "Calibrate/Enable cursor control and then press ok";
+                    ShowNDialog(msg, "");
+                    Next?.Invoke();
+                    SendTrackingStatus(true);
+                    _view.Open(this.SelectedPath);
+                }
+                
+            } 
+            else if (_appPath == null)
+            {
+                var msg = "Invalid App Path to GazePointer";
+                ShowDialog(msg, true);
+            }
+            else
+            {
+                var msg = "No Video File Selected. Please select one first.";
+                ShowDialog(msg, false);
+            }
+        }
+
+        private bool startProcess(string path)
+        {
+            string dir = Path.GetDirectoryName(path);
+            Console.WriteLine(dir);
+            Process p = new Process();
+            try
+            {
+                string task = Path.GetFileNameWithoutExtension(dir);
+                if (!isRunning(task))
+                {
+
+                    p.StartInfo = new ProcessStartInfo(path)
+                    {
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        WorkingDirectory = dir
+                    };
+
+                    p.Start();
+                }
+                return true;
+            }
+            catch
+            {
+                ShowDialog("Incorrect path", true);
+                return false;
+            }
+        }
+
+        private bool isRunning(string taskname)
+        {
+            string processName = taskname.Replace(".exe", "");
+
+            foreach (Process process in Process.GetProcessesByName(processName))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private void GetAppPath(string path)
+        {
+            _appPath = path; 
         }
 
         #endregion
@@ -81,6 +226,35 @@ namespace RecorderApp.ViewModels
         }
 
         #endregion
+
+        #region Open Multi-user Results Window
+
+        private DelegateCommand _multiUserResWindow;
+        public DelegateCommand MultiUserResWindow =>
+            _multiUserResWindow ?? (_multiUserResWindow = new DelegateCommand(ShowMultiUserResWindow));
+
+        void ShowMultiUserResWindow()
+        {
+            Next?.Invoke();
+            _view4.Open();
+        }
+
+        #endregion
+        
+        #region Open Multi-user Results Window
+
+        private DelegateCommand _loadClipsWindow;
+        public DelegateCommand LoadClipsWindow =>
+            _loadClipsWindow ?? (_loadClipsWindow = new DelegateCommand(ShowLoadClipsWindow));
+
+        void ShowLoadClipsWindow()
+        {
+            Next?.Invoke();
+            _view5.Open();
+        }
+
+        #endregion
+
         #region Get File Methods / Open File Dialog
 
         private string selectedPath;
@@ -90,6 +264,10 @@ namespace RecorderApp.ViewModels
             get { return selectedPath; }
             set 
             {
+                if (string.IsNullOrEmpty(value))
+                {
+                    throw new ArgumentException("No Video file selected");
+                }
                 SetProperty(ref selectedPath, value);
             }
         }
@@ -132,7 +310,7 @@ namespace RecorderApp.ViewModels
         private void KeepVidPath()
         {
             _ea.GetEvent<SavePathEvent>().Publish(SelectedPath);
-            //Console.WriteLine("helo " + SelectedPath);
+            Console.WriteLine("helo " + SelectedPath);
         }
 
         private void SendTrackingStatus(bool status)
@@ -156,6 +334,7 @@ namespace RecorderApp.ViewModels
 
         public Action Close { get; set; }
 
+        public Action Back { get; set; }
         public Action Next { get; set; }
 
         #endregion
@@ -172,12 +351,15 @@ namespace RecorderApp.ViewModels
         {
             //GazeTrackerViewModel gazeVm = new GazeTrackerViewModel();
             //gazeVm.startCalibration();
-            SendCalibrationSignal(true);
+            //SendCalibrationSignal(true);
+
+            ShowDialog("No Tobii Device Connected.", true);
+            
         }
         private void SendCalibrationSignal(bool start)
         {
             _ea.GetEvent<RecStatusEvent>().Publish(start);
-            Console.WriteLine("Calibration triggered");
+            //Console.WriteLine("Calibration triggered");
         }
         #endregion
 
@@ -188,6 +370,7 @@ namespace RecorderApp.ViewModels
     {
         Action Close { get; set; }
 
+        Action Back { get; set; }
         Action Next { get; set; }
     }
 

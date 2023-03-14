@@ -33,6 +33,7 @@ namespace RecorderApp.ViewModels
         public IView _view;
         public IView2 _view2;
         public IView3 _view3;
+
         public GazeTrackerViewModel(IEventAggregator ea, IView3 view3)
         {
             IsTrackingGaze = false;
@@ -48,8 +49,10 @@ namespace RecorderApp.ViewModels
             // Register event listener for gaze tracking status
             _eyeXHost.GazeTrackingChanged += EyeXHost_GazeTrackingChanged;
 
+
+
             // start eyeX host
-            //_eyeXHost.Start();
+            _eyeXHost.Start();
 
             if (_eyeXHost.WaitUntilConnected(TimeSpan.FromSeconds(5)))
             {
@@ -81,7 +84,7 @@ namespace RecorderApp.ViewModels
         }
         private void GetTrackingStatus(bool started)
         {
-            if (started)
+            if (started && videoSource != null)
             {
                 startTracking();
             }
@@ -91,12 +94,13 @@ namespace RecorderApp.ViewModels
 
         public void startTracking()
         {
-            
+
             // uncomment to initiate calibration
             //_eyeXHost.LaunchGuestCalibration();
 
             var stream = _eyeXHost.CreateGazePointDataStream(Tobii.EyeX.Framework.GazePointDataMode.LightlyFiltered);
 
+            /*
             #region write to output file
 
             // get path for output
@@ -104,6 +108,7 @@ namespace RecorderApp.ViewModels
 
             // filename with filename of clip and timestamp of recording
             String timeStamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            //if (videoSource.ToString() != null)
             string clipName = Path.GetFileName(videoSource.ToString());
 
             int dotPos = clipName.IndexOf(".");
@@ -121,12 +126,12 @@ namespace RecorderApp.ViewModels
             Console.WriteLine(exeRuntimeDirectory);
             Console.WriteLine(outputFileDirectory);
 
-            
+
             //outputFileName = "gazeTrackerOutput";
             // write headers on csv file
             System.IO.File.WriteAllText(outputFileDirectory + @"\" + outputFileName + ".csv", "X Gaze Data, Y Gaze Data, Time \r\n");
             #endregion
-
+            */
 
             stream.Next += (s, e) => updateGazeData((int)e.X, (int)e.Y, Timespan);
         }
@@ -135,7 +140,6 @@ namespace RecorderApp.ViewModels
         {
             //_eyeXHost.LaunchGuestCalibration();
             //_eyeXHost.LaunchCalibrationTesting();
-            Console.WriteLine("tobii gumana ka na pls");
             _eyeXHost.LaunchRecalibration();
 
         }
@@ -151,8 +155,9 @@ namespace RecorderApp.ViewModels
 
         private void GetMediaStatus(bool ended)
         {
-            if(ended)
+            if (ended)
             {
+                writeFile(rawData);
                 ShowQuickResultsWindow();
             }
         }
@@ -179,10 +184,11 @@ namespace RecorderApp.ViewModels
         public Uri VideoSource
         {
             get { return videoSource; }
-            set 
-            { 
-                videoSource = value;
-                RaisePropertyChanged("VideoSource");
+            set
+            {
+                //videoSource = value;
+                //RaisePropertyChanged("VideoSource");
+                SetProperty(ref videoSource, value);
             }
         }
 
@@ -203,16 +209,23 @@ namespace RecorderApp.ViewModels
         public int Timespan
         {
             get { return timeSpan; }
-            set 
-            { 
+            set
+            {
                 timeSpan = value;
                 RaisePropertyChanged("Timespan");
             }
         }
 
-        public void GetTimeElapsed(int timeMs)
+        public void GetTimeElapsed(Tuple<int,int,int> data)
         {
+            ///*
+            int x = data.Item1;
+            int y = data.Item2;
+            int timeMs = data.Item3;
+            //*/
             Timespan = timeMs;
+
+            updateGazeData(x, y, Timespan);
         }
 
 
@@ -226,30 +239,19 @@ namespace RecorderApp.ViewModels
         /// <summary>
         /// bind to view element in GazeTrackerView.xaml & gaze data model 
         /// </summary>
+        /// 
+        private int _gazeX;
         public int GazeX
         {
-            get
-            {
-                return gazeData.GazeX;
-            }
-            set
-            {
-                gazeData.GazeX = value;
-                RaisePropertyChanged("GazeX");
-            }
+            get { return _gazeX; }
+            set { SetProperty(ref _gazeX, value); }
         }
 
+        private int _gazeY;
         public int GazeY
         {
-            get
-            {
-                return gazeData.GazeY;
-            }
-            set
-            {
-                gazeData.GazeY = value;
-                RaisePropertyChanged("GazeY");
-            }
+            get { return _gazeY; }
+            set { SetProperty(ref _gazeY, value); }
         }
 
         public int Time
@@ -282,10 +284,12 @@ namespace RecorderApp.ViewModels
             GazeY = y;
             Time = time;
 
-            //rawData.Add(new RawGaze(x, y, time));
-            string csvFormattedGazeData = x.ToString() + "," + y.ToString() + "," + time.ToString();
+            rawData.Add(new RawGaze(x, y, time));
+            //string csvFormattedGazeData = x.ToString() + "," + y.ToString() + "," + time.ToString();
             // appends string to csv every function call
-            writeDataToFile(csvFormattedGazeData);
+            //writeDataToFile(csvFormattedGazeData);
+
+
 
             //writeFile(rawData, "gazeTrackerOutput");
         }
@@ -296,7 +300,7 @@ namespace RecorderApp.ViewModels
         /// </summary>
         /// <param name="text"></param>
         /// 
-        
+
         private void writeDataToFile(string text)
         {
             using (StreamWriter sw = System.IO.File.AppendText(outputFileDirectory + @"\" + outputFileName + ".csv"))
@@ -304,20 +308,48 @@ namespace RecorderApp.ViewModels
                 sw.WriteLine(text);
             }
         }
-        
+
+        private void writeFile(List<RawGaze> data)
+        {
+
+            // get path for output
+            string exeRuntimeDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+            // filename with filename of clip and timestamp of recording
+            String timeStamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            //if (videoSource.ToString() != null)
+            string clipName = Path.GetFileName(videoSource.ToString());
+
+            int dotPos = clipName.IndexOf(".");
+            clipName = clipName.Substring(0, dotPos);
+            Console.WriteLine("video name: " + clipName);
+            outputFileName = clipName + "_" + timeStamp + ".csv";
+            //string outputFolder = outputFileName;
+
+            // find output foldr/ create if it doesn't exit
+            outputFileDirectory = Path.Combine(exeRuntimeDirectory, "Output", "GazeTrackerOutput");
+            if (!System.IO.Directory.Exists(outputFileDirectory))
+            {
+                System.IO.Directory.CreateDirectory(outputFileDirectory);
+            }
+
+
+            string fullOutput = outputFileDirectory + @"\" + outputFileName;
+            using (var writer = new StreamWriter(fullOutput))
+            using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+            {
+                csv.WriteHeader<RawGaze>();
+                csv.NextRecord();
+                csv.WriteRecords(data);
+            }
+            Console.WriteLine("written: " + fullOutput);
+
+        }
 
         #endregion
 
 
         #region IsTrackingGaze + IsUserPresent
-
-        private string _recordingText;
-
-        public string RecordingText
-        {
-            get { return _recordingText; }
-            //set { _recordingText = value; }
-        }
 
 
         /// <summary>
@@ -327,12 +359,12 @@ namespace RecorderApp.ViewModels
 
         public bool IsUserPresent
         {
-            get 
-            { 
-                return _isUserPresent; 
+            get
+            {
+                return _isUserPresent;
             }
-            set 
-            { 
+            set
+            {
                 _isUserPresent = value;
                 RaisePropertyChanged("IsUserPresent");
             }
@@ -346,11 +378,11 @@ namespace RecorderApp.ViewModels
 
         public bool IsTrackingGaze
         {
-            get 
-            { 
-                return _isTrackingGaze; 
+            get
+            {
+                return _isTrackingGaze;
             }
-            set 
+            set
             {
                 _isTrackingGaze = value;
                 //SetProperty(ref _isTrackingGaze, value);
@@ -362,11 +394,11 @@ namespace RecorderApp.ViewModels
 
         public bool IsTrackingGazeSupported
         {
-            get 
-            { 
-                return _isTrackingGazeSupported; 
+            get
+            {
+                return _isTrackingGazeSupported;
             }
-            set 
+            set
             {
                 _isTrackingGazeSupported = value;
                 RaisePropertyChanged("IsTrackingGazeSupported");
@@ -439,6 +471,7 @@ namespace RecorderApp.ViewModels
 
         public Action Close { get; set; }
 
+        public Action Back { get; set; }
         public Action Next { get; set; }
 
         #endregion

@@ -1,8 +1,10 @@
 ﻿using Prism.Events;
+using Prism.Services.Dialogs;
 using RecorderApp.Utility;
 using RecorderApp.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,20 +25,33 @@ namespace RecorderApp.Views
     public partial class QuickResultsView : Window, IView3
     {
         IEventAggregator _ea;
-
-
-        public QuickResultsView(IEventAggregator ea)
+        IDialogService _dialogService;
+        public QuickResultsView(IEventAggregator ea, IDialogService dialogService)
         {
             InitializeComponent();
             _ea = ea;
             Loaded += QuickResultsView_Loaded;
             lbFiles.SelectionChanged += LbFiles_SelectionChanged;
             MediaElement clipEl = new MediaElement();
+            _dialogService = dialogService;
         }
 
         private void LbFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            _ea.GetEvent<ListboxWatchEvent>().Publish(lbFiles.SelectedItem.ToString());
+            try
+            {
+                Console.WriteLine("Index:" + lbFiles.SelectedIndex);
+                if (lbFiles.SelectedIndex != -1)
+                {
+                    _ea.GetEvent<ListboxWatchEvent>().Publish(lbFiles.SelectedItem.ToString());
+
+                }
+            }
+            catch (Exception ex)
+            {
+                var msg = "Something went wrong. Error: " + ex.Message;
+                ShowDialog(msg, true);
+            }
         }
 
         private void QuickResultsView_Loaded(object sender, RoutedEventArgs e)
@@ -50,7 +65,27 @@ namespace RecorderApp.Views
                     mView.Show();
                 };
 
+                vm.Back += () =>
+                {
+                    CancelEventArgs arg = new CancelEventArgs();
+                    BackToMain(arg);
+                    mView.ShowDialog();
+                };
             }
+        }
+
+        protected void BackToMain(CancelEventArgs e)
+        {
+            this.Visibility = Visibility.Collapsed;
+            e.Cancel = true;
+
+            Console.WriteLine("Baxk To Main");
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            Application.Current.Shutdown();
+
         }
 
         #region Show New Window Methods
@@ -93,6 +128,7 @@ namespace RecorderApp.Views
             //VidPlayer.Visibility = Visibility.Visible;
         }
 
+        #region Mouse behavior
         private void clipEl_MouseEnter(object sender, MouseEventArgs e)
         {
             //Console.WriteLine("enteresd");
@@ -156,6 +192,24 @@ namespace RecorderApp.Views
         {
             MediaElement clip = sender as MediaElement;
             clip.Pause();
+        }
+
+        #endregion
+
+        private void ShowDialog(string dialogMessage, bool error)
+        {
+            var p = new DialogParameters();
+            p.Add("message", dialogMessage);
+            p.Add("error", error);
+
+            _dialogService.ShowDialog("MessageDialog", p, result =>
+            {
+                if (result.Result == ButtonResult.OK)
+                {
+                    Console.WriteLine("Naclose mo ata");
+
+                }
+            });
         }
     }
 
